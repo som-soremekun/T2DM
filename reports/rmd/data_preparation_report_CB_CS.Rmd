@@ -1,0 +1,230 @@
+---
+title: "Phenotype Definition Report"
+author: "Chisom Soremekun"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: 
+  html_document:
+    theme: "cerulean"
+    toc: true
+    toc_float: true
+    toc_depth: 5
+    code_folding: hide
+---
+
+
+### Load the required libraries
+```{r setup, message = FALSE, echo = TRUE}
+knitr::opts_chunk$set(message = FALSE, echo = TRUE, warning = FALSE)
+date <- gsub("-","_",Sys.Date())
+options(scipen=9999)
+library(data.table)
+library(tidyverse)
+```
+
+
+## Data Exploration Report
+This report describes the phenotype data transformation for the genome-wide association of T2D in UGR.  
+
+## Step 1: Data Exploration 
+
+Read in the file (data). 
+Using read.delim will retain tab delim spacing
+
+```{r }
+#pheno <- read_csv("/scratch/gen1/cb334/t2d/Hb1c.csv")
+pheno <- read.delim("Hb1c.txt")
+```
+
+The data contains `r ncol(pheno)` columns and `r nrow(pheno)` rows study participants. The colums include the individual ids, hba1c values and the covariates.
+
+
+Gender
+
+```{r }
+table(pheno$t2d)
+```
+
+The data contains `r pheno %>% group_by(sex) %>% tally()` females and males.
+
+
+Height
+
+```{r }
+summary(pheno$height)
+
+hist(pheno$height, main ="Height",
+     xlab ="height",
+     xlim = c(80, 250), col ="blue",
+     freq = TRUE)
+```
+This shows the summary of the height distribution in the population. The minimum height is `r min(pheno$height)`, while the maximum height is `r max(pheno$height)`. The values for `r pheno %>% filter(is.na(height)) %>% nrow()` individuals are not available.
+
+
+Age
+
+```{r }
+summary(pheno$age)
+
+pheno %>%
+   ggplot(aes(x=age)) +
+   geom_histogram()
+```
+
+This shows the age distribution summary of the participants. The minimum age is `r min(pheno$age)`, while the maximum age is `r max(pheno$age)`.
+
+
+Age VS Height
+
+```{r }
+pheno %>% 
+   ggplot(aes(x=age,y=height)) +
+   geom_point()
+```
+This shows a scatter plot of the age and height of the participants.
+
+
+Weight
+
+```{r }
+summary(pheno$weight)
+
+hist(pheno$weight, main ="Weight",
+     xlab ="weight",
+     xlim = c(10, 100), col ="pink",
+     freq = TRUE)
+```
+
+This shows the weight distribution summary of the participants. The minimum weight is `r min(pheno$weight)`, while the maximum weight is `r max(pheno$weight)`.The histogram plot shows the weight distribution in the dataset. 
+
+
+BMI
+
+```{r }
+summary(pheno$BMI)
+
+hist(pheno$bmi, main ="BMI",
+     xlab ="bmi",
+     xlim = c(10, 100), col ="green",
+     freq = TRUE)
+```
+
+This shows the bmi distribution summary of the participants. The minimum bmi is `r min(pheno$bmi)`, while the maximum bmi is `r max(pheno$bmi)`. The histogram plot shows the bmi distribution of the study participants
+
+
+HbA1c
+
+```{r }
+summary(pheno$hba1c2)
+
+pheno %>%
+  ggplot(aes(x=hba1c2)) +
+  geom_histogram() +
+  geom_vline(aes(xintercept=6.5),
+            color="blue")
+```
+
+Hba1c values for the individuals are to be converted to either cases or control based on their value. Therefore, it is important to get an idea of the column distribution. From the result, the minimum hba1c value is `r min(pheno$hba1c2)` while the maximum is `r max(pheno$hba1c2)`. The value for `r pheno %>% filter(is.na(hba1c2)) %>% nrow()` participants are missing.
+The plot gives a graphical view of hba1c distribution.
+
+
+T2d cases and controls
+
+```{r }
+table(pheno$t2d)
+```
+The data contains `r pheno %>%  group_by(t2d) %>% tally()` diabetic individuals(cases) and non-diabetes individuals(controls)
+
+
+
+## Step 2: Phenotype definition and transformation
+
+Classify individuals to cases (diabetic) and control (non-diabetic) based on their hba1c2 value
+According to WHO, “An HbA1c of 6.5% is recommended as the cut point for diagnosing diabetes. A value of less than 6.5% does not exclude diabetes diagnosed using glucose tests”. This created a new column "t2d" and 0 represents cases, while 1 represents control.
+
+```{r}
+pheno <- pheno %>%
+   mutate(t2d = case_when(
+     hba1c2 < 6.5 ~ 0,
+     hba1c2 >= 6.5 ~ 1
+   )
+   )
+```
+
+Classify the gender
+The "sex" column has to changed from strings. The males will be assigned the value of 1, while the females will be assigned the value of 0.This creats a new column "sex2" with the values of 0 and 1.
+
+```{r}
+pheno <- pheno %>%
+   mutate(sex = case_when(
+   sex == "Male" ~ 1,
+   sex == "Female" ~ 0
+)
+)
+```
+
+Write the data to a table
+
+```{r}
+pheno %>%
+  write.table("t2d_pheno_test",
+            col.names=T,
+            row.names=F,
+            quote=F,
+            sep="\t")
+```
+
+
+## Step 3: GWAS Input File Preparation
+
+The GWAS input file requires a table with the colums sangerid, t2d, and possible covariates; sex, age, age2, bmi, PC1,PC2,PC3,PC4,PC5,PC6,PC7,PC8,PC9,PC10. PCs 1-10 are the first 10 UGR principle components derived from PC analysis of the population, to determine any substructure.
+The code below reads in the needed columns "V1-V12" to a file called pca and the headers are renamed.
+
+```{r}
+pca <- read.table("/data/gen1/UKBiobank/Smoking/UGR/PCA/ordered_pca_of_Pruned_indel_excluded_merged_chromALLtpedToPlink_Prunning2.eigenvec",
+	header = F,
+	sep =" ") %>%
+	rename( sangerid = V1,
+		PC1 = V3,
+		PC2 = V4,
+		PC3 = V5,
+		PC4 = V6,
+		PC5 = V7,
+		PC6 = V8,
+		PC7 = V9,
+		PC8 = V10,
+		PC9 = V11,
+		PC10 = V12 )
+```
+
+
+Merging of the phenotype and pca file.
+This joins the pca file to the phenotype file using a common column "sangerid"
+
+```{r}
+pheno <- left_join(
+		pheno,
+		pca,
+		by="sangerid")
+```
+
+
+Selection of the vital columns for GWAS input file.
+This picks up the needed colums required to form an input file for GWAS and it is written to a table "t2d_pheno_ugr.txt".
+
+```{r}
+pheno %>% 
+	select(sangerid,
+		t2d,
+		sex,
+		age,
+		age2,
+		bmi,
+		PC1,PC2,PC3,PC4,PC5,PC6,PC7,PC8,PC9,PC10) %>%
+	write.table("t2d_pheno_ugr.txt",
+		col.names=T,
+		row.names=F,
+		quote=F,
+		sep="\t")
+```
+
+The input file is ready for association analysis.
