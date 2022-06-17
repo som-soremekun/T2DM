@@ -1,0 +1,52 @@
+#!/bin/bash
+
+#==================================================================
+# File:        regenie_step2
+# Author:      CS
+# Date:        16 June 2022
+# Description: GWASs of T2D
+#==================================================================
+
+#SBATCH --account=ckd
+#SBATCH --nodes=1
+#SBATCH --tasks-per-node=1
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=1000
+#SBATCH --output=/projects1/umic/users/c/ch/chisom/t2d/logs/step2_reg.o
+#SBATCH --error=/projects1/umic/users/c/ch/chisom/t2d/logs/step2_reg.e
+
+module load regenie
+
+DIR= "/mnt/users/c/ch/chisom/t2d"
+REGENIE= "regenie"
+CHR= "BGEN_FOR_GWAS$1"
+BGEN_FOR_GWAS= "/mnt/users/c/ch/chisom/t2d/bgen"
+PHENOTYPE_FILE= "/mnt/users/c/ch/chisom/t2d/t2d_pheno_ugr.txt"
+PHENOTYPE_NAME= "/mnt/users/c/ch/chisom/t2d/pheno_name.txt"
+COVARIATE_FILE= "/mnt/users/c/ch/chisom/t2d/t2d_pheno_ugr.txt"
+CONT_COVARIATE_NAMES= "/mnt/users/c/ch/chisom/t2d/t2d_cov_name.txt"
+CAT_COVARIATE_NAMES= "/mnt/users/c/ch/chisom/t2d/t2d_cat_cov.txt"
+REGENIE_OUT_STEP2= "/mnt/users/c/ch/chisom/t2d/step2"
+
+cd $DIR
+$REGENIE
+
+ ./regenie \ 
+  --step 2 \ 
+  --bgen BGEN_FOR_GWAS \ 
+  --chr CHR \ 
+  --phenoFile PHENOTYPE_FILE \ 
+  --phenoCol PHENOTYPE_NAME \
+  --covarFile COVARIATE_FILE \ 
+  --covarColList COVARIATE_NAMES \ 
+  --spa \ 
+  --pred REGENIE_OUT_STEP1_pred.list \ 
+  --bsize 1000 \ 
+  --minINFO 0.3 \
+  --bt \
+  --strict \
+  --gz \
+  --write-samples \
+  --threads \
+  --loocv \ 
+ --out REGENIE_OUT_STEP2
