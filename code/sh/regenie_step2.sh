@@ -22,6 +22,7 @@ CHR="/mnt/users/c/ch/chisom/t2d/bgen$1"
 BGEN_FOR_GWAS="/mnt/users/c/ch/chisom/t2d/bgen"
 PHENOTYPE_FILE="/mnt/users/c/ch/chisom/t2d/t2d_pheno_ugr.txt"
 COVARIATE_FILE="/mnt/users/c/ch/chisom/t2d/t2d_pheno_ugr.txt"
+REGENIE_OUT_STEP1="/mnt/users/c/ch/chisom/t2d/step1"
 REGENIE_OUT_STEP2="/mnt/users/c/ch/chisom/t2d/step2"
 
 cd $DIR
