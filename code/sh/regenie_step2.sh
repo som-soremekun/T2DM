@@ -10,8 +10,8 @@
 #SBATCH --account=ckd
 #SBATCH --nodes=1
 #SBATCH --tasks-per-node=1
-#SBATCH --cpus-per-task=1
-#SBATCH --mem=1000
+#SBATCH --cpus-per-task=4
+#SBATCH --mem=10000
 #SBATCH --output=/projects1/umic/users/c/ch/chisom/t2d/logs/step2_reg.o
 #SBATCH --error=/projects1/umic/users/c/ch/chisom/t2d/logs/step2_reg.e
 
@@ -32,11 +32,10 @@ cd $DIR
   --bgen ${BGEN_FOR_GWAS} \
   --chr ${CHR} \
   --phenoFile ${PHENOTYPE_FILE} \
-  --phenoCol ${PHENOTYPE_FILE}$t2d \
+  --phenoCol t2d \
   --covarFile ${COVARIATE_FILE} \
   --covarCol age,age2,sex,bmi,PC1,PC2,PC3,PC4,PC5,PC6,PC7,PC8,PC9,PC10 \
-  --spa \
-  --pred ${REGENIE_OUT_STEP1}_pred.list \
+  --pred ${REGENIE_OUT_STEP1}_step1output_pred.list \
   --bsize 200 \
   --minINFO 0.3 \
   --bt \
@@ -44,4 +43,4 @@ cd $DIR
   --gz \
   --threads 4 \
   --loocv \
- --out ${REGENIE_OUT_STEP2}
+  --out ${REGENIE_OUT_STEP2}_step2output
